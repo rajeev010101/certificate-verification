@@ -8,7 +8,7 @@ const app = express();
 
 // 🔥 IMPORTANT: CORS FIX
 app.use(cors({
-  origin: "https://your-frontend.vercel.app", // 👈 PUT YOUR REAL URL
+  origin: "https://certificate-verification-chi.vercel.app/", // 👈 PUT YOUR REAL URL
   credentials: true
 }));
 
