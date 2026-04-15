@@ -1,5 +1,5 @@
 const service = require("./certificate.service");
-const processCSV = require("../../jobs/csv.Processor");
+const processCSV = require("../../jobs/csv.processor");
 
 // ✅ CREATE
 exports.createCertificate = async (req, res) => {
