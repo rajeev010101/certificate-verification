@@ -7,8 +7,20 @@ const rateLimit = require("express-rate-limit");
 const app = express();
 
 // 🔥 IMPORTANT: CORS FIX
+const allowedOrigins = [
+  "https://certificate-verification-chi.vercel.app",
+  "https://certificate-verification-52cktef3j-rajeev-dahiyas-projects.vercel.app",
+  "http://localhost:5173"
+];
+
 app.use(cors({
-  origin: "https://certificate-verification-chi.vercel.app/", // 👈 PUT YOUR REAL URL
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
 
