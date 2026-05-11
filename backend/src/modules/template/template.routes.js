@@ -1,13 +1,62 @@
 const router = require("express").Router();
+
 const ctrl = require("./template.controller");
-const auth = require("../../middleware/auth.middleware");
 
-router.post("/", auth, ctrl.createTemplate);
-router.get("/", auth, ctrl.getTemplates);
+const auth =
+  require("../../middleware/auth.middleware");
 
-router.get("/:id", auth, ctrl.getTemplateById);
-router.put("/:id", auth, ctrl.updateTemplate);
-router.delete("/:id", auth, ctrl.deleteTemplate);
-router.post("/preview/:id", auth, ctrl.previewTemplate);
+//////////////////////////////////////////////////////
+// CREATE
+//////////////////////////////////////////////////////
+router.post(
+  "/",
+  auth,
+  ctrl.createTemplate
+);
+
+//////////////////////////////////////////////////////
+// GET ALL
+//////////////////////////////////////////////////////
+router.get(
+  "/",
+  auth,
+  ctrl.getTemplates
+);
+
+//////////////////////////////////////////////////////
+// PREVIEW
+//////////////////////////////////////////////////////
+router.post(
+  "/preview/:id",
+  auth,
+  ctrl.previewTemplate
+);
+
+//////////////////////////////////////////////////////
+// GET ONE
+//////////////////////////////////////////////////////
+router.get(
+  "/:id",
+  auth,
+  ctrl.getTemplateById
+);
+
+//////////////////////////////////////////////////////
+// UPDATE
+//////////////////////////////////////////////////////
+router.put(
+  "/:id",
+  auth,
+  ctrl.updateTemplate
+);
+
+//////////////////////////////////////////////////////
+// DELETE
+//////////////////////////////////////////////////////
+router.delete(
+  "/:id",
+  auth,
+  ctrl.deleteTemplate
+);
 
 module.exports = router;

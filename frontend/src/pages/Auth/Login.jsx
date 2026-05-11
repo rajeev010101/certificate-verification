@@ -1,109 +1,506 @@
 import { useState } from "react";
+
 import api from "../../services/api";
-import { useAuthStore } from "../../store/authStore";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+
+import {
+  useAuthStore,
+} from "../../store/authStore";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  motion,
+} from "framer-motion";
+
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Sparkles,
+  ShieldCheck,
+  CheckCircle2,
+} from "lucide-react";
 
 export default function Login() {
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const setToken = useAuthStore((s) => s.setToken);
-  const navigate = useNavigate();
+  //////////////////////////////////////////////////////
+  // STATE
+  //////////////////////////////////////////////////////
+  const [form, setForm] =
+    useState({
+      email: "",
+      password: "",
+    });
 
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [success, setSuccess] =
+    useState("");
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  //////////////////////////////////////////////////////
+  // STORE
+  //////////////////////////////////////////////////////
+  const setToken =
+    useAuthStore(
+      (s) => s.setToken
+    );
+
+  const navigate =
+    useNavigate();
+
+  //////////////////////////////////////////////////////
+  // HANDLE CHANGE
+  //////////////////////////////////////////////////////
+  const handleChange = (e) => {
+
+    setForm({
+      ...form,
+
+      [e.target.name]:
+        e.target.value,
+    });
+  };
+
+  //////////////////////////////////////////////////////
+  // VALIDATE
+  //////////////////////////////////////////////////////
+  const validateForm = () => {
+
+    if (
+      !form.email.trim()
+    ) {
+      return "Email is required";
+    }
+
+    if (
+      !form.password.trim()
+    ) {
+      return "Password is required";
+    }
+
+    return null;
+  };
+
+  //////////////////////////////////////////////////////
+  // SUBMIT
+  //////////////////////////////////////////////////////
   const submit = async () => {
+
     try {
-      setLoading(true);
+
+      //////////////////////////////////////////////////////
+      // RESET
+      //////////////////////////////////////////////////////
       setError("");
+      setSuccess("");
 
-      const res = await api.post("/auth/login", form);
+      //////////////////////////////////////////////////////
+      // VALIDATE
+      //////////////////////////////////////////////////////
+      const validationError =
+        validateForm();
 
-      // ✅ EXTRACT TOKENS
-      const { accessToken, refreshToken } = res.data;
+      if (validationError) {
 
-      // 🔥 IMPORTANT FIX (THIS WAS MISSING)
-      localStorage.setItem("token", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
+        setError(
+          validationError
+        );
 
-      // OPTIONAL (state management)
-      setToken(accessToken);
+        return;
+      }
 
-      navigate("/dashboard");
+      setLoading(true);
+
+      //////////////////////////////////////////////////////
+      // LOGIN API
+      //////////////////////////////////////////////////////
+      const res =
+        await api.post(
+          "/auth/login",
+          form
+        );
+
+      console.log(
+        "LOGIN RESPONSE:",
+        res.data
+      );
+
+      //////////////////////////////////////////////////////
+      // EXTRACT DATA
+      //////////////////////////////////////////////////////
+      const {
+        accessToken,
+        refreshToken,
+        user,
+      } = res.data;
+
+      //////////////////////////////////////////////////////
+      // SAVE TOKENS
+      //////////////////////////////////////////////////////
+      localStorage.setItem(
+        "token",
+        accessToken
+      );
+
+      localStorage.setItem(
+        "refreshToken",
+        refreshToken
+      );
+
+      //////////////////////////////////////////////////////
+      // SAVE USER
+      //////////////////////////////////////////////////////
+      if (user) {
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(
+            user
+          )
+        );
+
+        localStorage.setItem(
+          "role",
+          user.role
+        );
+
+        localStorage.setItem(
+          "orgId",
+          user.organizationId
+        );
+      }
+
+      //////////////////////////////////////////////////////
+      // STORE TOKEN
+      //////////////////////////////////////////////////////
+      setToken(
+        accessToken
+      );
+
+      //////////////////////////////////////////////////////
+      // SUCCESS
+      //////////////////////////////////////////////////////
+      setSuccess(
+        "Login successful"
+      );
+
+      //////////////////////////////////////////////////////
+      // ROLE-BASED REDIRECT
+      //////////////////////////////////////////////////////
+      setTimeout(() => {
+
+        if (
+          user?.role ===
+          "super_admin"
+        ) {
+
+          navigate(
+            "/super-admin"
+          );
+
+        } else if (
+          user?.role ===
+          "admin"
+        ) {
+
+          navigate(
+            "/dashboard"
+          );
+
+        } else if (
+          user?.role ===
+          "manager"
+        ) {
+
+          navigate(
+            "/dashboard"
+          );
+
+        } else {
+
+          navigate(
+            "/student"
+          );
+        }
+
+      }, 1000);
 
     } catch (err) {
-      setError(err?.response?.data?.msg || "Login failed");
+
+      console.error(
+        "LOGIN ERROR:",
+        err
+      );
+
+      setError(
+        err?.response?.data
+          ?.message ||
+          "Login failed"
+      );
+
     } finally {
+
       setLoading(false);
     }
   };
 
+  //////////////////////////////////////////////////////
+  // UI
+  //////////////////////////////////////////////////////
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white">
+    <div className="relative min-h-screen overflow-hidden bg-[#020617] flex items-center justify-center p-6 text-white">
 
-      {/* Background Glow */}
-      <div className="absolute w-[500px] h-[500px] bg-purple-600 opacity-20 blur-3xl rounded-full top-10 left-10"></div>
-      <div className="absolute w-[400px] h-[400px] bg-blue-500 opacity-20 blur-3xl rounded-full bottom-10 right-10"></div>
+      {/* BACKGROUND */}
+      <div className="absolute top-[-200px] left-[-200px] w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-[120px]" />
 
-      {/* Card */}
+      <div className="absolute bottom-[-200px] right-[-200px] w-[500px] h-[500px] rounded-full bg-cyan-500/20 blur-[120px]" />
+
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
+
+      {/* CARD */}
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-[380px] p-8 backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl"
+        initial={{
+          opacity: 0,
+          scale: 0.9,
+          y: 40,
+        }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+          y: 0,
+        }}
+        transition={{
+          duration: 0.4,
+        }}
+        className="relative z-10 w-full max-w-[500px] rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-2xl shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden"
       >
-        {/* Title */}
-        <h2 className="text-3xl font-bold text-center mb-6 tracking-wide">
-          Welcome Back 👋
-        </h2>
 
-        {/* Error */}
-        {error && (
-          <div className="bg-red-500/20 text-red-400 p-2 mb-4 rounded text-sm text-center">
-            {error}
+        {/* TOP */}
+        <div className="relative p-8 border-b border-white/10">
+
+          <div className="absolute top-0 right-0 w-[200px] h-[200px] rounded-full bg-purple-500/10 blur-3xl" />
+
+          <div className="relative z-10 flex items-center gap-5">
+
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center shadow-[0_20px_60px_rgba(124,58,237,0.45)]">
+
+              <ShieldCheck
+                size={34}
+              />
+
+            </div>
+
+            <div>
+
+              <h1 className="text-4xl font-black bg-gradient-to-r from-white via-purple-200 to-cyan-200 bg-clip-text text-transparent">
+
+                Welcome Back
+
+              </h1>
+
+              <p className="text-gray-400 mt-2">
+                Enterprise RBAC Authentication
+              </p>
+
+            </div>
+
           </div>
-        )}
-
-        {/* Inputs */}
-        <div className="flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className="p-3 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:border-purple-500 transition"
-            onChange={(e) =>
-              setForm({ ...form, email: e.target.value })
-            }
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            className="p-3 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:border-purple-500 transition"
-            onChange={(e) =>
-              setForm({ ...form, password: e.target.value })
-            }
-          />
-
-          {/* Button */}
-          <button
-            onClick={submit}
-            disabled={loading}
-            className="mt-4 p-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 hover:scale-105 transition-transform duration-200 font-semibold shadow-lg disabled:opacity-50"
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-400 mt-6">
-          Don’t have an account?{" "}
-          <span
-            onClick={() => navigate("/register")}
-            className="text-purple-400 cursor-pointer hover:underline"
-          >
-            Register
-          </span>
-        </p>
+        {/* BODY */}
+        <div className="p-8">
+
+          {/* ERROR */}
+          {error && (
+
+            <motion.div
+              initial={{
+                opacity: 0,
+                y: -10,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              className="mb-5 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-red-400 text-sm"
+            >
+
+              {error}
+
+            </motion.div>
+          )}
+
+          {/* SUCCESS */}
+          {success && (
+
+            <motion.div
+              initial={{
+                opacity: 0,
+                y: -10,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              className="mb-5 rounded-2xl border border-green-500/20 bg-green-500/10 p-4 text-green-400 text-sm flex items-center gap-3"
+            >
+
+              <CheckCircle2
+                size={18}
+              />
+
+              {success}
+
+            </motion.div>
+          )}
+
+          {/* FORM */}
+          <div className="space-y-5">
+
+            {/* EMAIL */}
+            <InputField
+              icon={
+                <Mail size={18} />
+              }
+              type="email"
+              name="email"
+              placeholder="Email Address"
+              value={form.email}
+              onChange={
+                handleChange
+              }
+            />
+
+            {/* PASSWORD */}
+            <div className="relative">
+
+              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 z-10">
+                <Lock size={18} />
+              </div>
+
+              <input
+                type={
+                  showPassword
+                    ? "text"
+                    : "password"
+                }
+                name="password"
+                placeholder="Password"
+                value={
+                  form.password
+                }
+                onChange={
+                  handleChange
+                }
+                className="w-full h-[60px] rounded-2xl border border-white/10 bg-white/5 pl-14 pr-14 text-white outline-none transition focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 placeholder:text-gray-500"
+              />
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowPassword(
+                    !showPassword
+                  )
+                }
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"
+              >
+
+                {showPassword ? (
+                  <EyeOff
+                    size={18}
+                  />
+                ) : (
+                  <Eye size={18} />
+                )}
+
+              </button>
+
+            </div>
+
+            {/* BUTTON */}
+            <motion.button
+              whileHover={{
+                scale: 1.02,
+              }}
+              whileTap={{
+                scale: 0.98,
+              }}
+              onClick={submit}
+              disabled={loading}
+              className="group mt-3 w-full h-[62px] rounded-2xl bg-gradient-to-r from-purple-600 to-cyan-500 font-bold text-lg shadow-[0_20px_50px_rgba(124,58,237,0.4)] disabled:opacity-60 flex items-center justify-center gap-3"
+            >
+
+              {loading ? (
+                "Logging in..."
+              ) : (
+                <>
+                  Login
+                  <ArrowRight
+                    size={20}
+                    className="group-hover:translate-x-1 transition"
+                  />
+                </>
+              )}
+
+            </motion.button>
+
+          </div>
+
+          {/* FOOTER */}
+          <div className="mt-8 text-center text-gray-400 text-sm">
+
+            Don’t have an account?{" "}
+
+            <button
+              onClick={() =>
+                navigate(
+                  "/register"
+                )
+              }
+              className="text-purple-400 hover:text-purple-300 transition font-semibold"
+            >
+
+              Register
+
+            </button>
+
+          </div>
+
+        </div>
       </motion.div>
+    </div>
+  );
+}
+//////////////////////////////////////////////////////
+// INPUT FIELD
+//////////////////////////////////////////////////////
+function InputField({
+  icon,
+  ...props
+}) {
+  return (
+    <div className="relative">
+
+      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 z-10">
+        {icon}
+      </div>
+
+      <input
+        {...props}
+        className="w-full h-[60px] rounded-2xl border border-white/10 bg-white/5 pl-14 pr-5 text-white outline-none transition focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 placeholder:text-gray-500"
+      />
+
     </div>
   );
 }

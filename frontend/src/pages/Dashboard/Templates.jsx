@@ -1,218 +1,373 @@
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import api from "../../services/api";
+
 import DashboardLayout from "../../layouts/DashboardLayout";
-import Modal from "../../components/ui/Modal";
-import { motion } from "framer-motion";
+
+import {
+  motion,
+} from "framer-motion";
+
+import {
+  FileText,
+  Trash2,
+  Eye,
+  Sparkles,
+  RefreshCcw,
+} from "lucide-react";
 
 export default function Templates() {
-  const [data, setData] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [previewHtml, setPreviewHtml] = useState("");
-  const [loadingId, setLoadingId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const navigate = useNavigate();
 
   //////////////////////////////////////////////////////
-  // 🔥 FETCH
+  // STATE
   //////////////////////////////////////////////////////
-  const fetchTemplates = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const [data, setData] =
+    useState([]);
 
-      const res = await api.get("/templates");
-      setData(res.data || []);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load templates");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [loading, setLoading] =
+    useState(true);
 
+  const [error, setError] =
+    useState("");
+
+  //////////////////////////////////////////////////////
+  // FETCH
+  //////////////////////////////////////////////////////
+  const fetchTemplates =
+    async () => {
+
+      try {
+
+        setLoading(true);
+
+        setError("");
+
+        const res =
+          await api.get(
+            "/templates"
+          );
+
+        //////////////////////////////////////////////////////
+        // SAFE RESPONSE
+        //////////////////////////////////////////////////////
+        const templates =
+          Array.isArray(
+            res.data
+          )
+            ? res.data
+            : res.data.templates ||
+              res.data.data ||
+              [];
+
+        //////////////////////////////////////////////////////
+        // ALWAYS ARRAY
+        //////////////////////////////////////////////////////
+        setData(
+          Array.isArray(
+            templates
+          )
+            ? templates
+            : []
+        );
+
+      } catch (err) {
+
+        console.error(
+          "TEMPLATE FETCH ERROR:",
+          err
+        );
+
+        setError(
+          "Failed to load templates"
+        );
+
+        //////////////////////////////////////////////////////
+        // PREVENT .map CRASH
+        //////////////////////////////////////////////////////
+        setData([]);
+
+      } finally {
+
+        setLoading(false);
+      }
+    };
+
+  //////////////////////////////////////////////////////
+  // LOAD
+  //////////////////////////////////////////////////////
   useEffect(() => {
     fetchTemplates();
-  }, [fetchTemplates]);
+  }, []);
 
   //////////////////////////////////////////////////////
-  // 🔥 DELETE
+  // DELETE
   //////////////////////////////////////////////////////
-  const deleteTemplate = async (id) => {
-    if (!window.confirm("Delete this template?")) return;
+  const deleteTemplate =
+    async (id) => {
 
-    try {
-      setLoadingId(id);
-      await api.delete(`/templates/${id}`);
-      setData((prev) => prev.filter((t) => t._id !== id));
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete template");
-    } finally {
-      setLoadingId(null);
-    }
-  };
+      try {
+
+        const confirmDelete =
+          window.confirm(
+            "Delete template?"
+          );
+
+        if (!confirmDelete)
+          return;
+
+        await api.delete(
+          `/templates/${id}`
+        );
+
+        //////////////////////////////////////////////////////
+        // REMOVE FROM UI
+        //////////////////////////////////////////////////////
+        setData((prev) =>
+          prev.filter(
+            (item) =>
+              item._id !== id
+          )
+        );
+
+      } catch (err) {
+
+        console.error(
+          "DELETE ERROR:",
+          err
+        );
+
+        alert(
+          "Failed to delete template"
+        );
+      }
+    };
 
   //////////////////////////////////////////////////////
-  // 🔥 PREVIEW
+  // LOADING
   //////////////////////////////////////////////////////
-  const openPreview = async (template) => {
-    try {
-      setSelected(template);
+  if (loading) {
+    return (
+      <DashboardLayout>
 
-      const res = await api.post(`/templates/preview/${template._id}`, {
-        name: "John Doe",
-        course: "React Mastery",
-        date: "2026"
-      });
+        <div className="min-h-screen bg-[#020617] p-8 text-white">
 
-      setPreviewHtml(res.data || "");
-    } catch (err) {
-      console.error(err);
-      alert("Preview failed");
-    }
-  };
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
-  return (
-    <DashboardLayout>
-      <div className="p-8 bg-[#0b0f19] min-h-screen text-white">
+            {[...Array(6)].map(
+              (_, i) => (
 
-        {/* 🔥 HEADER */}
-        <div className="flex justify-between items-center mb-10">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              Templates 🎨
-            </h1>
-            <p className="text-gray-400 text-sm mt-1">
-              Manage and preview your certificate templates
-            </p>
+                <div
+                  key={i}
+                  className="h-[320px] rounded-3xl bg-white/5 animate-pulse"
+                />
+              )
+            )}
+
           </div>
 
-          <button
-            onClick={() => navigate("/dashboard/templates/create")}
-            className="px-5 py-2 bg-gradient-to-r from-purple-600 to-blue-500 rounded-lg shadow-lg hover:opacity-90 transition"
-          >
-            + Create Template
-          </button>
         </div>
 
-        {/* ERROR */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
-            {error}
+      </DashboardLayout>
+    );
+  }
+
+  //////////////////////////////////////////////////////
+  // UI
+  //////////////////////////////////////////////////////
+  return (
+    <DashboardLayout>
+
+      <div className="relative min-h-screen overflow-hidden bg-[#020617] text-white">
+
+        {/* BACKGROUND */}
+        <div className="absolute top-[-200px] left-[-200px] w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-[120px]" />
+
+        <div className="absolute bottom-[-200px] right-[-200px] w-[500px] h-[500px] rounded-full bg-cyan-500/20 blur-[120px]" />
+
+        <div className="relative z-10 p-8">
+
+          {/* HEADER */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+
+            <div className="flex items-center gap-5">
+
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center shadow-[0_20px_50px_rgba(124,58,237,0.4)]">
+
+                <Sparkles size={30} />
+
+              </div>
+
+              <div>
+
+                <h1 className="text-5xl font-black bg-gradient-to-r from-white via-purple-200 to-cyan-200 bg-clip-text text-transparent">
+
+                  Templates
+
+                </h1>
+
+                <p className="text-gray-400 mt-2">
+                  Manage certificate templates
+                </p>
+
+              </div>
+
+            </div>
+
+            <button
+              onClick={
+                fetchTemplates
+              }
+              className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            >
+
+              <RefreshCcw size={18} />
+
+              Refresh
+
+            </button>
+
           </div>
-        )}
 
-        {/* LOADING */}
-        {loading ? (
-          <SkeletonGrid />
-        ) : data.length === 0 ? (
-          <EmptyState text="No templates created yet" />
-        ) : (
-          <div className="grid md:grid-cols-3 gap-6">
+          {/* ERROR */}
+          {error && (
+            <div className="mb-8 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400">
+              {error}
+            </div>
+          )}
 
-            {data.map((t, index) => (
-              <motion.div
-                key={t._id}
-                whileHover={{ scale: 1.04 }}
-                className="group bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl shadow-xl hover:bg-white/10 transition"
-              >
+          {/* EMPTY */}
+          {Array.isArray(data) &&
+          data.length === 0 ? (
 
-                {/* 🔥 PREVIEW */}
-                <div className="bg-white text-black h-40 overflow-hidden">
-                  {t.html ? (
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: t.html?.slice(0, 500) || ""
+            <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 p-20 text-center text-gray-400">
+
+              No templates found
+
+            </div>
+
+          ) : (
+
+            //////////////////////////////////////////////////////
+            // GRID
+            //////////////////////////////////////////////////////
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+
+              {Array.isArray(data) &&
+                data.map(
+                  (
+                    template,
+                    index
+                  ) => (
+
+                    <motion.div
+                      key={
+                        template._id ||
+                        index
+                      }
+                      whileHover={{
+                        y: -5,
                       }}
-                      className="scale-[0.3] origin-top-left"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400">
-                      No Preview
-                    </div>
-                  )}
-                </div>
-
-                {/* 🔥 INFO */}
-                <div className="p-4">
-                  <h2 className="font-semibold text-lg mb-3">
-                    {t.name || `Template ${index + 1}`}
-                  </h2>
-
-                  {/* 🔥 ACTION BUTTONS */}
-                  <div className="flex justify-between text-xs">
-
-                    <button
-                      onClick={() => openPreview(t)}
-                      className="px-3 py-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-500/20"
+                      className="rounded-3xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
                     >
-                      Preview
-                    </button>
 
-                    <button
-                      onClick={() => navigate(`/dashboard/templates/edit/${t._id}`)}
-                      className="px-3 py-1 bg-yellow-500/10 text-yellow-400 rounded hover:bg-yellow-500/20"
-                    >
-                      Edit
-                    </button>
+                      {/* TOP */}
+                      <div className="p-5 border-b border-white/10 flex items-center justify-between">
 
-                    <button
-                      onClick={() => deleteTemplate(t._id)}
-                      className="px-3 py-1 bg-red-500/10 text-red-400 rounded hover:bg-red-500/20"
-                    >
-                      {loadingId === t._id ? "..." : "Delete"}
-                    </button>
+                        <div>
 
-                  </div>
-                </div>
+                          <h2 className="text-xl font-bold">
 
-              </motion.div>
-            ))}
+                            {template?.name ||
+                              "Untitled"}
 
-          </div>
-        )}
+                          </h2>
 
-        {/* 🔥 MODAL */}
-        <Modal isOpen={!!selected} onClose={() => setSelected(null)}>
-          <h2 className="mb-4 text-xl font-bold">
-            {selected?.name || "Preview"}
-          </h2>
+                          <p className="text-gray-400 text-sm mt-1">
+                            Certificate Template
+                          </p>
 
-          <div className="bg-white text-black p-6 rounded-lg max-h-[600px] overflow-auto shadow-xl">
-            {previewHtml ? (
-              <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
-            ) : (
-              <div>Loading preview...</div>
-            )}
-          </div>
-        </Modal>
+                        </div>
 
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
+
+                          <FileText size={20} />
+
+                        </div>
+
+                      </div>
+
+                      {/* PREVIEW */}
+                      <div className="h-[260px] bg-white overflow-hidden">
+
+                        {template?.html ? (
+
+                          <iframe
+                            title={
+                              template?.name
+                            }
+                            srcDoc={
+                              template?.html
+                            }
+                            className="w-full h-full scale-[0.25] origin-top-left pointer-events-none"
+                            style={{
+                              width:
+                                "400%",
+                              height:
+                                "400%",
+                              border:
+                                "none",
+                            }}
+                          />
+
+                        ) : (
+
+                          <div className="w-full h-full flex items-center justify-center text-gray-500">
+                            No Preview
+                          </div>
+                        )}
+
+                      </div>
+
+                      {/* ACTIONS */}
+                      <div className="p-5 flex items-center justify-between border-t border-white/10">
+
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition">
+
+                          <Eye size={16} />
+
+                          View
+
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            deleteTemplate(
+                              template._id
+                            )
+                          }
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition"
+                        >
+
+                          <Trash2 size={16} />
+
+                          Delete
+
+                        </button>
+
+                      </div>
+
+                    </motion.div>
+                  )
+                )}
+
+            </div>
+          )}
+
+        </div>
       </div>
     </DashboardLayout>
-  );
-}
-
-//////////////////////////////////////////////////////
-// 🔥 EXTRA COMPONENTS
-//////////////////////////////////////////////////////
-
-function EmptyState({ text }) {
-  return (
-    <div className="p-10 text-center text-gray-400 border border-dashed border-white/10 rounded-xl">
-      {text}
-    </div>
-  );
-}
-
-function SkeletonGrid() {
-  return (
-    <div className="grid md:grid-cols-3 gap-6">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="h-40 bg-white/5 animate-pulse rounded-xl" />
-      ))}
-    </div>
   );
 }

@@ -8,8 +8,6 @@ const app = express();
 
 // 🔥 IMPORTANT: CORS FIX
 const allowedOrigins = [
-  "https://certificate-verification-chi.vercel.app",
-  "https://certificate-verification-52cktef3j-rajeev-dahiyas-projects.vercel.app",
   "http://localhost:5173"
 ];
 

@@ -1,18 +1,52 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL
+  baseURL: "http://localhost:5000/api",
+  withCredentials: true,
 });
 
-// 🔥 AUTO ATTACH TOKEN
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+//////////////////////////////////////////////////////
+// REQUEST INTERCEPTOR
+//////////////////////////////////////////////////////
+api.interceptors.request.use(
+  (config) => {
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    const token =
+      localStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization =
+        `Bearer ${token}`;
+    }
+
+    return config;
+  },
+
+  (error) => Promise.reject(error)
+);
+
+//////////////////////////////////////////////////////
+// RESPONSE INTERCEPTOR
+//////////////////////////////////////////////////////
+api.interceptors.response.use(
+  (response) => response,
+
+  (error) => {
+
+    //////////////////////////////////////////////////////
+    // AUTO HANDLE 401
+    //////////////////////////////////////////////////////
+    if (error.response?.status === 401) {
+
+      console.error(
+        "❌ Unauthorized Request"
+      );
+
+      localStorage.removeItem("token");
+    }
+
+    return Promise.reject(error);
   }
-
-  return config;
-});
+);
 
 export default api;

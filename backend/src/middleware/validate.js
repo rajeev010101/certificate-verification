@@ -1,9 +1,38 @@
-module.exports = (schema) => (req, res, next) => {
-  const { error } = schema.validate(req.body);
+module.exports =
+  (schema) =>
+  (req, res, next) => {
 
-  if (error) {
-    return res.status(400).json({ error: error.message });
-  }
+    //////////////////////////////////////////////////////
+    // VALIDATE
+    //////////////////////////////////////////////////////
+    const {
+      error,
+    } = schema.validate(
+      req.body,
+      {
+        abortEarly: false,
 
-  next();
-};
+        stripUnknown: true,
+      }
+    );
+
+    //////////////////////////////////////////////////////
+    // ERROR
+    //////////////////////////////////////////////////////
+    if (error) {
+
+      return res.status(400).json({
+        success: false,
+
+        message:
+          error.details
+            .map(
+              (d) =>
+                d.message
+            )
+            .join(", "),
+      });
+    }
+
+    next();
+  };

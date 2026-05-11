@@ -1,68 +1,277 @@
-const User = require("./User.model");
+const bcrypt =
+  require("bcryptjs");
 
+const jwt =
+  require("jsonwebtoken");
 
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const User =
+  require("./User.model");
 
-const generateTokens = (user) => {
-  const payload = {
-    id: user._id,
-    role: user.role,
-    organizationId: user.organizationId
-  };
+//////////////////////////////////////////////////////
+// FIXED IMPORT
+//////////////////////////////////////////////////////
+const Organization =
+  require("../organization/Organization.model.js");
 
-  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "1h"
-  });
+const {
+  generateAccessToken,
+  generateRefreshToken,
+} = require("../../services/token.service");
 
-  const refreshToken = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "7d"
-  });
+//////////////////////////////////////////////////////
+// REGISTER
+//////////////////////////////////////////////////////
+exports.register = async ({
+  name,
+  email,
+  password,
+  organizationName,
+  role,
+}) => {
 
-  console.log("JWT_SECRET:", process.env.JWT_SECRET);
+  //////////////////////////////////////////////////////
+  // USER EXISTS
+  //////////////////////////////////////////////////////
+  const exists =
+    await User.findOne({
+      email,
+    });
 
-  return { accessToken, refreshToken };
-};
+  if (exists) {
 
-// REGISTER (with organization)
-exports.register = async ({ name, email, password, organizationName }) => {
-  const exists = await User.findOne({ email });
-  if (exists) throw new Error("User already exists");
-
-  const org = await Organization.create({
-    name: organizationName
-  });
-
-  const hashed = await bcrypt.hash(password, 10);
-
-  const user = await User.create({
-    name,
-    email,
-    password: hashed,
-    organizationId: org._id
-  });
-
-  return generateTokens(user);
-};
-
-// LOGIN
-exports.login = async ({ email, password }) => {
-  const user = await User.findOne({ email });
-
-  if (!user) throw new Error("User not found");
-
-  const match = await bcrypt.compare(password, user.password);
-  if (!match) throw new Error("Invalid credentials");
-
-  return generateTokens(user);
-};
-
-// REFRESH TOKEN
-exports.refresh = async (token) => {
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return generateTokens(decoded);
-  } catch {
-    throw new Error("Invalid refresh token");
+    throw new Error(
+      "User already exists"
+    );
   }
+
+  //////////////////////////////////////////////////////
+  // FIND OR CREATE ORGANIZATION
+  //////////////////////////////////////////////////////
+  let org =
+    await Organization.findOne({
+      name: organizationName,
+    });
+
+  if (!org) {
+
+    org =
+      await Organization.create({
+        name:
+          organizationName,
+      });
+  }
+
+  //////////////////////////////////////////////////////
+  // HASH PASSWORD
+  //////////////////////////////////////////////////////
+  const hashed =
+    await bcrypt.hash(
+      password,
+      12
+    );
+
+  //////////////////////////////////////////////////////
+  // CREATE USER
+  //////////////////////////////////////////////////////
+  const user =
+    await User.create({
+      name,
+
+      email,
+
+      password: hashed,
+
+      role:
+        role ||
+        "student",
+
+      organizationId:
+        org._id,
+    });
+
+  //////////////////////////////////////////////////////
+  // TOKENS
+  //////////////////////////////////////////////////////
+  const accessToken =
+    generateAccessToken(
+      user
+    );
+
+  const refreshToken =
+    generateRefreshToken(
+      user
+    );
+
+  //////////////////////////////////////////////////////
+  // SAVE REFRESH TOKEN
+  //////////////////////////////////////////////////////
+  user.refreshToken =
+    refreshToken;
+
+  await user.save();
+
+  //////////////////////////////////////////////////////
+  // RESPONSE
+  //////////////////////////////////////////////////////
+  return {
+    success: true,
+
+    user: {
+      id: user._id,
+
+      name: user.name,
+
+      email: user.email,
+
+      role: user.role,
+
+      organizationId:
+        user.organizationId,
+    },
+
+    accessToken,
+
+    refreshToken,
+  };
+};
+
+//////////////////////////////////////////////////////
+// LOGIN
+//////////////////////////////////////////////////////
+exports.login = async ({
+  email,
+  password,
+}) => {
+
+  //////////////////////////////////////////////////////
+  // USER
+  //////////////////////////////////////////////////////
+  const user =
+    await User.findOne({
+      email,
+    }).select(
+      "+password +refreshToken"
+    );
+
+  if (!user) {
+
+    throw new Error(
+      "User not found"
+    );
+  }
+
+  //////////////////////////////////////////////////////
+  // PASSWORD
+  //////////////////////////////////////////////////////
+  const match =
+    await bcrypt.compare(
+      password,
+      user.password
+    );
+
+  if (!match) {
+
+    throw new Error(
+      "Invalid credentials"
+    );
+  }
+
+  //////////////////////////////////////////////////////
+  // TOKENS
+  //////////////////////////////////////////////////////
+  const accessToken =
+    generateAccessToken(
+      user
+    );
+
+  const refreshToken =
+    generateRefreshToken(
+      user
+    );
+
+  //////////////////////////////////////////////////////
+  // SAVE TOKEN
+  //////////////////////////////////////////////////////
+  user.refreshToken =
+    refreshToken;
+
+  await user.save();
+
+  //////////////////////////////////////////////////////
+  // RESPONSE
+  //////////////////////////////////////////////////////
+  return {
+    success: true,
+
+    user: {
+      id: user._id,
+
+      name: user.name,
+
+      email: user.email,
+
+      role: user.role,
+
+      organizationId:
+        user.organizationId,
+    },
+
+    accessToken,
+
+    refreshToken,
+  };
+};
+
+//////////////////////////////////////////////////////
+// REFRESH
+//////////////////////////////////////////////////////
+exports.refresh = async (
+  token
+) => {
+
+  if (!token) {
+
+    throw new Error(
+      "Refresh token required"
+    );
+  }
+
+  //////////////////////////////////////////////////////
+  // VERIFY
+  //////////////////////////////////////////////////////
+  const decoded =
+    jwt.verify(
+      token,
+      process.env.JWT_REFRESH_SECRET
+    );
+
+  //////////////////////////////////////////////////////
+  // USER
+  //////////////////////////////////////////////////////
+  const user =
+    await User.findById(
+      decoded.id
+    );
+
+  if (!user) {
+
+    throw new Error(
+      "User not found"
+    );
+  }
+
+  //////////////////////////////////////////////////////
+  // TOKENS
+  //////////////////////////////////////////////////////
+  return {
+    accessToken:
+      generateAccessToken(
+        user
+      ),
+
+    refreshToken:
+      generateRefreshToken(
+        user
+      ),
+  };
 };
