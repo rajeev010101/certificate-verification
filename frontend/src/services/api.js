@@ -1,9 +1,13 @@
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: "http://localhost:5000/api",
-  withCredentials: true,
-});
+const api =
+  axios.create({
+
+    baseURL:
+      "http://localhost:5000/api",
+
+    withCredentials: true,
+  });
 
 //////////////////////////////////////////////////////
 // REQUEST INTERCEPTOR
@@ -11,10 +15,34 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
 
+    //////////////////////////////////////////////////////
+    // TOKEN
+    //////////////////////////////////////////////////////
     const token =
-      localStorage.getItem("token");
+      localStorage.getItem(
+        "token"
+      );
 
-    if (token) {
+    //////////////////////////////////////////////////////
+    // SKIP AUTH ROUTES
+    //////////////////////////////////////////////////////
+    const isAuthRoute =
+      config.url.includes(
+        "/auth/login"
+      ) ||
+
+      config.url.includes(
+        "/auth/register"
+      );
+
+    //////////////////////////////////////////////////////
+    // ATTACH TOKEN
+    //////////////////////////////////////////////////////
+    if (
+      token &&
+      !isAuthRoute
+    ) {
+
       config.headers.Authorization =
         `Bearer ${token}`;
     }
@@ -22,30 +50,41 @@ api.interceptors.request.use(
     return config;
   },
 
-  (error) => Promise.reject(error)
+  (error) =>
+    Promise.reject(error)
 );
 
 //////////////////////////////////////////////////////
 // RESPONSE INTERCEPTOR
 //////////////////////////////////////////////////////
 api.interceptors.response.use(
-  (response) => response,
+
+  (response) =>
+    response,
 
   (error) => {
 
     //////////////////////////////////////////////////////
-    // AUTO HANDLE 401
+    // UNAUTHORIZED
     //////////////////////////////////////////////////////
-    if (error.response?.status === 401) {
+    if (
+      error.response?.status ===
+      401
+    ) {
 
       console.error(
         "❌ Unauthorized Request"
       );
 
-      localStorage.removeItem("token");
+      localStorage.clear();
+
+      window.location.href =
+        "/login";
     }
 
-    return Promise.reject(error);
+    return Promise.reject(
+      error
+    );
   }
 );
 

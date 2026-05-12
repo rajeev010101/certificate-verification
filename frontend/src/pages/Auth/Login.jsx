@@ -51,10 +51,10 @@ export default function Login() {
   //////////////////////////////////////////////////////
   // STORE
   //////////////////////////////////////////////////////
-  const setToken =
-    useAuthStore(
-      (s) => s.setToken
-    );
+  const login =
+  useAuthStore(
+    (s) => s.login
+  );
 
   const navigate =
     useNavigate();
@@ -97,163 +97,151 @@ export default function Login() {
   //////////////////////////////////////////////////////
   const submit = async () => {
 
-    try {
+  try {
 
-      //////////////////////////////////////////////////////
-      // RESET
-      //////////////////////////////////////////////////////
-      setError("");
-      setSuccess("");
+    //////////////////////////////////////////////////////
+    // LOADING
+    //////////////////////////////////////////////////////
+    setLoading(true);
 
-      //////////////////////////////////////////////////////
-      // VALIDATE
-      //////////////////////////////////////////////////////
-      const validationError =
-        validateForm();
+    setError("");
 
-      if (validationError) {
-
-        setError(
-          validationError
-        );
-
-        return;
-      }
-
-      setLoading(true);
-
-      //////////////////////////////////////////////////////
-      // LOGIN API
-      //////////////////////////////////////////////////////
-      const res =
-        await api.post(
-          "/auth/login",
-          form
-        );
-
-      console.log(
-        "LOGIN RESPONSE:",
-        res.data
+    //////////////////////////////////////////////////////
+    // LOGIN API
+    //////////////////////////////////////////////////////
+    const res =
+      await api.post(
+        "/auth/login",
+        form
       );
 
-      //////////////////////////////////////////////////////
-      // EXTRACT DATA
-      //////////////////////////////////////////////////////
-      const {
-        accessToken,
-        refreshToken,
-        user,
-      } = res.data;
+    console.log(
+      "LOGIN RESPONSE:",
+      res.data
+    );
 
-      //////////////////////////////////////////////////////
-      // SAVE TOKENS
-      //////////////////////////////////////////////////////
-      localStorage.setItem(
-        "token",
-        accessToken
+    //////////////////////////////////////////////////////
+    // SAFE EXTRACTION
+    //////////////////////////////////////////////////////
+    const accessToken =
+      res.data?.accessToken;
+
+    const refreshToken =
+      res.data?.refreshToken;
+
+    const user =
+      res.data?.user;
+
+    //////////////////////////////////////////////////////
+    // VALIDATION
+    //////////////////////////////////////////////////////
+    if (
+      !accessToken ||
+      !user
+    ) {
+
+      throw new Error(
+        "Invalid login response"
       );
-
-      localStorage.setItem(
-        "refreshToken",
-        refreshToken
-      );
-
-      //////////////////////////////////////////////////////
-      // SAVE USER
-      //////////////////////////////////////////////////////
-      if (user) {
-
-        localStorage.setItem(
-          "user",
-          JSON.stringify(
-            user
-          )
-        );
-
-        localStorage.setItem(
-          "role",
-          user.role
-        );
-
-        localStorage.setItem(
-          "orgId",
-          user.organizationId
-        );
-      }
-
-      //////////////////////////////////////////////////////
-      // STORE TOKEN
-      //////////////////////////////////////////////////////
-      setToken(
-        accessToken
-      );
-
-      //////////////////////////////////////////////////////
-      // SUCCESS
-      //////////////////////////////////////////////////////
-      setSuccess(
-        "Login successful"
-      );
-
-      //////////////////////////////////////////////////////
-      // ROLE-BASED REDIRECT
-      //////////////////////////////////////////////////////
-      setTimeout(() => {
-
-        if (
-          user?.role ===
-          "super_admin"
-        ) {
-
-          navigate(
-            "/super-admin"
-          );
-
-        } else if (
-          user?.role ===
-          "admin"
-        ) {
-
-          navigate(
-            "/dashboard"
-          );
-
-        } else if (
-          user?.role ===
-          "manager"
-        ) {
-
-          navigate(
-            "/dashboard"
-          );
-
-        } else {
-
-          navigate(
-            "/student"
-          );
-        }
-
-      }, 1000);
-
-    } catch (err) {
-
-      console.error(
-        "LOGIN ERROR:",
-        err
-      );
-
-      setError(
-        err?.response?.data
-          ?.message ||
-          "Login failed"
-      );
-
-    } finally {
-
-      setLoading(false);
     }
-  };
+
+    //////////////////////////////////////////////////////
+    // SAVE TOKENS
+    //////////////////////////////////////////////////////
+    localStorage.setItem(
+      "token",
+      accessToken
+    );
+
+    localStorage.setItem(
+      "refreshToken",
+      refreshToken
+    );
+
+    //////////////////////////////////////////////////////
+    // SAVE USER
+    //////////////////////////////////////////////////////
+    localStorage.setItem(
+      "user",
+      JSON.stringify(user)
+    );
+
+    //////////////////////////////////////////////////////
+    // STORE
+    //////////////////////////////////////////////////////
+    login(
+  accessToken,
+  user
+);
+
+    //////////////////////////////////////////////////////
+    // DEBUG
+    //////////////////////////////////////////////////////
+    console.log(
+      "USER ROLE:",
+      user.role
+    );
+
+    //////////////////////////////////////////////////////
+    // ROLE REDIRECT
+    //////////////////////////////////////////////////////
+    switch (user.role) {
+
+      case "admin":
+
+        navigate(
+          "/dashboard"
+        );
+
+        break;
+
+      case "manager":
+
+        navigate(
+          "/manager/dashboard"
+        );
+
+        break;
+
+      case "student":
+
+        navigate(
+          "/student/dashboard"
+        );
+
+        break;
+
+      default:
+
+        navigate("/");
+    }
+
+  } catch (err) {
+
+    console.error(
+      "LOGIN ERROR FULL:",
+      err
+    );
+
+    console.error(
+      "BACKEND ERROR:",
+      err.response?.data
+    );
+
+    setError(
+      err?.response?.data
+        ?.message ||
+
+      err.message ||
+
+      "Login failed"
+    );
+
+  } finally {
+
+    setLoading(false);
+  }
+};
 
   //////////////////////////////////////////////////////
   // UI

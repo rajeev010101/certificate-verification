@@ -1,13 +1,69 @@
 import { create } from "zustand";
 
-export const useAuthStore = create((set) => ({
-  token: localStorage.getItem("token") || null,
+export const useAuthStore =
+  create((set) => ({
 
-  setToken: (token) => set({ token }),
+    //////////////////////////////////////////////////////
+    // STATE
+    //////////////////////////////////////////////////////
+    token:
+      localStorage.getItem(
+        "token"
+      ) || null,
 
-  logout: () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    set({ token: null });
-  }
-}));
+    user:
+      JSON.parse(
+        localStorage.getItem(
+          "user"
+        )
+      ) || null,
+
+    //////////////////////////////////////////////////////
+    // LOGIN
+    //////////////////////////////////////////////////////
+    login: (
+      token,
+      user
+    ) => {
+
+      //////////////////////////////////////////////////////
+      // STORAGE
+      //////////////////////////////////////////////////////
+      localStorage.setItem(
+        "token",
+        token
+      );
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(user)
+      );
+
+      //////////////////////////////////////////////////////
+      // STATE
+      //////////////////////////////////////////////////////
+      set({
+        token,
+        user,
+      });
+    },
+
+    //////////////////////////////////////////////////////
+    // LOGOUT
+    //////////////////////////////////////////////////////
+    logout: () => {
+
+      //////////////////////////////////////////////////////
+      // CLEAR
+      //////////////////////////////////////////////////////
+      localStorage.clear();
+
+      //////////////////////////////////////////////////////
+      // RESET
+      //////////////////////////////////////////////////////
+      set({
+        token: null,
+        user: null,
+      });
+    },
+  }));

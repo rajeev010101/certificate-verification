@@ -1,7 +1,7 @@
 const service = require("./certificate.service");
 const processCSV = require("../../jobs/csv.processor");
 
-// ✅ CREATE
+//  CREATE
 exports.createCertificate = async (req, res) => {
   try {
     if (!req.body.templateId) {
@@ -21,14 +21,14 @@ exports.createCertificate = async (req, res) => {
   }
 };
 
-// ✅ BULK
+//  BULK
 exports.bulkUpload = async (req, res) => {
   processCSV(req.file.path);
 
   res.json({ message: "Bulk upload started 🚀" });
 };
 
-// 🔥 GET CERTIFICATES (FIX)
+//  GET CERTIFICATES (FIX)
 exports.getCertificates = async (req, res) => {
   try {
     const result = await service.getCertificates({
@@ -43,7 +43,7 @@ exports.getCertificates = async (req, res) => {
   }
 };
 
-// 🔥 VERIFY
+//  VERIFY
 exports.verifyCertificate = async (req, res) => {
   try {
     const cert = await service.verifyCertificate(req.params.id);

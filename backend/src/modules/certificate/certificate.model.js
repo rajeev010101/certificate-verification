@@ -1,43 +1,171 @@
-const mongoose = require("mongoose");
+const mongoose =
+  require("mongoose");
 
-const schema = new mongoose.Schema(
-  {
-    name: String,
-    email: String,
-    course: String,
+const schema =
+  new mongoose.Schema(
 
-    certificateId: {
-      type: String,
-      unique: true,
-      index: true
+    {
+      //////////////////////////////////////////////////////
+      // STUDENT
+      //////////////////////////////////////////////////////
+      studentId: {
+        type:
+          mongoose.Schema.Types.ObjectId,
+
+        ref: "User",
+
+        index: true,
+      },
+
+      //////////////////////////////////////////////////////
+      // MANAGER / ADMIN
+      //////////////////////////////////////////////////////
+      issuedBy: {
+        type:
+          mongoose.Schema.Types.ObjectId,
+
+        ref: "User",
+      },
+
+      //////////////////////////////////////////////////////
+      // TEMPLATE
+      //////////////////////////////////////////////////////
+      templateId: {
+        type:
+          mongoose.Schema.Types.ObjectId,
+
+        ref: "Template",
+      },
+
+      //////////////////////////////////////////////////////
+      // BASIC
+      //////////////////////////////////////////////////////
+      name: {
+        type: String,
+        required: true,
+      },
+
+      email: {
+        type: String,
+        required: true,
+      },
+
+      course: {
+        type: String,
+        required: true,
+      },
+
+      //////////////////////////////////////////////////////
+      // DESCRIPTION
+      //////////////////////////////////////////////////////
+      description: String,
+
+      //////////////////////////////////////////////////////
+      // SKILLS
+      //////////////////////////////////////////////////////
+      skills: String,
+
+      //////////////////////////////////////////////////////
+      // CERTIFICATE ID
+      //////////////////////////////////////////////////////
+      certificateId: {
+        type: String,
+
+        unique: true,
+
+        index: true,
+      },
+
+      //////////////////////////////////////////////////////
+      // DATES
+      //////////////////////////////////////////////////////
+      startDate: Date,
+
+      endDate: Date,
+
+      issueDate: {
+        type: Date,
+        default: Date.now,
+      },
+
+      expiryDate: Date,
+
+      //////////////////////////////////////////////////////
+      // DOMAIN
+      //////////////////////////////////////////////////////
+      domain: String,
+
+      //////////////////////////////////////////////////////
+      // SECURITY HASH
+      //////////////////////////////////////////////////////
+      hash: String,
+
+      //////////////////////////////////////////////////////
+      // PDF
+      //////////////////////////////////////////////////////
+      pdfUrl: String,
+
+      //////////////////////////////////////////////////////
+      // QR
+      //////////////////////////////////////////////////////
+      qrCode: String,
+
+      //////////////////////////////////////////////////////
+      // ORG
+      //////////////////////////////////////////////////////
+      organizationId: {
+        type:
+          mongoose.Schema.Types.ObjectId,
+
+        ref: "Organization",
+
+        index: true,
+      },
+
+      //////////////////////////////////////////////////////
+      // ANALYTICS
+      //////////////////////////////////////////////////////
+      verificationCount: {
+        type: Number,
+        default: 0,
+      },
+
+      downloadCount: {
+        type: Number,
+        default: 0,
+      },
+
+      //////////////////////////////////////////////////////
+      // STATUS
+      //////////////////////////////////////////////////////
+      status: {
+        type: String,
+
+        enum: [
+          "issued",
+          "revoked",
+          "expired",
+          "pending",
+        ],
+
+        default: "issued",
+      },
+
+      //////////////////////////////////////////////////////
+      // REVOCATION
+      //////////////////////////////////////////////////////
+      revokedReason: String,
     },
 
-    startDate: Date,
-    endDate: Date,
-    domain: String,
-
-    hash: String,
-    pdfUrl: String,
-
-    organizationId: {
-      type: mongoose.Schema.Types.ObjectId,
-      index: true
-    },
-
-    verificationCount: {
-      type: Number,
-      default: 0
-    },
-
-    status: {
-      type: String,
-      enum: ["valid", "revoked"],
-      default: "valid"
+    {
+      timestamps: true,
     }
-  },
-  { timestamps: true }
-);
+  );
 
 module.exports =
   mongoose.models.Certificate ||
-  mongoose.model("Certificate", schema);
+
+  mongoose.model(
+    "Certificate",
+    schema
+  );

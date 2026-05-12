@@ -217,7 +217,7 @@ export default function CreateTemplate() {
               -webkit-text-fill-color:transparent;
             "
           >
-            AI CERTIFICATION
+            CERTIFICATION
           </div>
 
         </div>
